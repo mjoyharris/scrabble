@@ -222,16 +222,19 @@ void Words::printResults()
         }
     }
 
-    int bestScore = selectedScores[numResponses];
-    int count = 0;
-
-    for (int i = 0; i < selectedWords.size(); i++)
+    else
     {
-        if (wordMap[selectedWords[i]] >= bestScore && count < numResponses)
+        int bestScore = selectedScores[numResponses];
+        int count = 0;
+
+        for (int i = 0; i < selectedWords.size(); i++)
         {
-            cout << selectedWords[i] << " with a score of ";
-            cout << wordMap[selectedWords[i]] << endl;
-            count++;
+            if (wordMap[selectedWords[i]] >= bestScore && count < numResponses)
+            {
+                cout << selectedWords[i] << " with a score of ";
+                cout << wordMap[selectedWords[i]] << endl;
+                count++;
+            }
         }
     }
 
