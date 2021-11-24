@@ -11,12 +11,16 @@ class Words
 private:
     map<string, int> wordMap;
     int numResponses;
-    vector<string> letterBank;
+    vector<char> letterBank;
+    vector<string> selectedWords;
+    vector<int> selectedScores;
 
 public:
     void readWords();
     void menu();
     int calcPoints(string word);
+    void findCombos();
+    void printResults();
 
 };
 
@@ -140,11 +144,97 @@ void Words::menu()
     while (numLetters > 0)
     {
         cout << "Please input a letter" << endl;
-        string letter;
+        char letter;
         cin >> letter;
         letterBank.push_back(letter);
         numLetters--;
     }
+}
+
+void Words::findCombos()
+{
+    int count = -1;
+    vector<char> letterBankCopy = letterBank;
+    selectedWords.clear();
+    selectedScores.clear();
+    map<string, int>::iterator it;
+    char selected;
+    bool found;
+    bool bigFound;
+
+    for (it = wordMap.begin(); it != wordMap.end(); it++)
+    {
+        bigFound = true;
+        //finds key in map
+        string target = it->first;
+
+        letterBank = letterBankCopy;
+
+        //sees if all the letters exists
+        if (target.length() <= letterBank.size()) {
+
+            for (int i = 0; i < target.length(); i++) {
+                char letter = target[i];
+
+                found = false;
+
+                //does that letter exist
+                for (int i = 0; i < letterBank.size(); i++) {
+                    selected = letterBank[i];
+
+                    if (letter == selected) {
+                        found = true;
+                        letterBank[i] = 0;
+                    }
+                }
+
+                if (!found) {
+                    bigFound = false;
+                }
+
+            }
+
+            //means all the letters were found and target word can be used in the game
+            if (bigFound)
+            {
+                    selectedWords.push_back(target);
+                    selectedScores.push_back(wordMap[target]);
+
+            }
+
+        }
+    }
+    sort(selectedScores.begin(), selectedScores.end());
+
+}
+
+void Words::printResults()
+{
+
+    //case that the user wants more results than their letters can make
+    if (selectedWords.size() < numResponses)
+    {
+        for (int i = 0; i < selectedWords.size(); i++)
+        {
+            cout << "Sorry! There isn't " << numResponses << " possible combos. Here are the " << selectedWords.size() << " we have." << endl;
+            cout << selectedWords[i] << " with a score of ";
+            cout << wordMap[selectedWords[i]] << endl;
+        }
+    }
+
+    int bestScore = selectedScores[numResponses];
+    int count = 0;
+
+    for (int i = 0; i < selectedWords.size(); i++)
+    {
+        if (wordMap[selectedWords[i]] >= bestScore && count < numResponses)
+        {
+            cout << selectedWords[i] << " with a score of ";
+            cout << wordMap[selectedWords[i]] << endl;
+            count++;
+        }
+    }
+
 }
 
 int main() {
@@ -163,6 +253,10 @@ int main() {
     bool continuePlaying = true;
     while (continuePlaying)
     {
+        wordObject.findCombos();
+
+        wordObject.printResults();
+
         string answer;
         cout << "Do you want to ask again? (yes or no)" << endl;
         cin >> answer;
@@ -178,4 +272,3 @@ int main() {
 
     return 0;
 }
-
