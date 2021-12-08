@@ -4,6 +4,7 @@
 #include <istream>
 #include <map>
 #include <vector>
+#include <list>
 using namespace std;
 
 class Graph
@@ -13,38 +14,61 @@ public:
     int numResponses;
     vector<char> letterBank;
     vector<string> selectedWords;
-    vector<int> selectedScores;
+    vector<pair<int,int>> selectedScores;
 
     //number of vertices is equal to amount of words in the data set
-    int numVert = 279496;
+    int V;
+    //int numVert = 279496;
+    //vector<int> vertArr[279496];
+
+    list<int> *adj;
+
+    Graph(int V);
 
     //adjaceny matrix implementation
-    string vertArr[279496][279496];
+    //int vertArr[279496][279496];
 
     //functions
-    void add_edge(int newWord);
-    int readWords();
+    void addEdge(string newWordStr, int newWordInt);
     void menu();
-    int calcPoints(string word);
-    void findCombos();
+    void findCombos(string newWordStr);
     void printResults();
+    void BFS(int start);
+    string getKey(int i);
+    bool within(string str1, string str2);
 
     //variables
+
+    string input;
+    string importantWord;
+    int calcPoints(string word);
     int count;
+    void readWords();
 };
 
-//adds edge between verties
-void Graph::add_edge(int newWord) {
+Graph::Graph(int V)
+{
+    this->V = V;
+    adj = new list<int>[V];
+}
 
-    int oldWord;
+//adds edge between vertices
+void Graph::addEdge(string newWordStr, int newWordInt) {
+
     //if something is a subset of newWord
     //if the word is within that word in some combo (aka same letters and <= size)
     //then, [newWord][oldWord] = 1
 
-    //if newWord is a subset of something
-    //then, [oldWord][newWorld] = 1;
-    vertArr[newWord][oldWord] = 1;
-    vertArr[oldWord][newWord] = 1;
+
+    //all matches that appear thus far appear in selectedWords
+    findCombos(newWordStr);
+    
+    //it wont be a subset of anything that comes after
+    for (int i = 0; i < selectedWords.size(); i++)
+    {
+        adj[wordMap[selectedWords[i]].first].push_back(newWordInt);
+        //vertArr[wordMap[selectedWords[i]].first].push_back(newWordInt);
+    }
 }
 
 int Graph::calcPoints(string word)
@@ -119,54 +143,6 @@ int Graph::calcPoints(string word)
     return totalScore;
 }
 
-int Graph::readWords()
-{
-    ifstream file;
-
-    string word;
-
-    //drag file into "cmake-build-debug" folder
-    //downloaded from keggle but then changed into a txt file with only the first column
-    file.open("scrabble_dict.txt");
-
-    //an error associated with opening the file
-    if (!file) {
-        cout << "Unable to open file";
-
-        //terminate
-        exit(1);
-    }
-
-    count = 0;
-
-    //loads in each line
-    while (file >> word) {
-
-        //map key- word, map value- first: count second: scrabble score
-        int points = calcPoints(word);
-        pair<int, int> myPair;
-        myPair.first = count;
-        myPair.second = points;
-        
-        wordMap.insert({word, myPair});
-        
-        Graph::add_edge(count);
-        count++;
-        //calls function to calculate the amount of points that word would attain in the game of scrabble
-        /*int points = calcPoints(word);
-
-        //inserts the word with its score into the map
-        pair<string, int> myPair;
-        myPair.first = word;
-        myPair.second = points;
-        wordMap.insert(myPair);*/
-    }
-
-    file.close();
-
-    return count;
-}
-
 void Graph::menu()
 {
     letterBank.clear();
@@ -178,37 +154,53 @@ void Graph::menu()
     cout << "How many of the top responses do you want to hear?" << endl;
     cin >> numResponses;
 
-    while (numLetters > 0)
-    {
-        cout << "Please input a letter" << endl;
-        char letter;
-        cin >> letter;
-        letterBank.push_back(letter);
-        numLetters--;
-    }
+    cout << "Please type your letters as a string" << endl;
+    cin >> input;
+
 }
 
-void Graph::findCombos()
+void Graph::findCombos(string target)
 {
-    int count = -1;
-    vector<char> letterBankCopy = letterBank;
     selectedWords.clear();
-    selectedScores.clear();
-    map<string, int>::iterator it;
+
+    for (auto it = wordMap.begin(); it != wordMap.end(); it++)
+    {
+        if (within(target, it->first))
+        {
+            selectedWords.push_back(it->first);
+        }
+    }
+}
+/*
+void Graph::findCombos(string target)
+{
+    //letters of the words found in map
+    vector<char> letterBank2;
+
+    //resets every time
+    selectedWords.clear();
+
+    //selectedScores.clear();
+
+    //tools for this function
+    map<string, pair<int,int>>::iterator it;
     char selected;
     bool found;
     bool bigFound;
 
+    //sees if target is in letterBank
     for (it = wordMap.begin(); it != wordMap.end(); it++)
     {
         bigFound = true;
         //finds key in map
-        string target = it->first;
 
-        letterBank = letterBankCopy;
+        for (int i = 0; i < it->first.length(); i++)
+        {
+            letterBank2.push_back(it->first[i]);
+        }
 
         //sees if all the letters exists
-        if (target.length() <= letterBank.size()) {
+        if (target.length() <= letterBank2.size()) {
 
             for (int i = 0; i < target.length(); i++) {
                 char letter = target[i];
@@ -216,12 +208,12 @@ void Graph::findCombos()
                 found = false;
 
                 //does that letter exist
-                for (int i = 0; i < letterBank.size(); i++) {
-                    selected = letterBank[i];
+                for (int i = 0; i < letterBank2.size(); i++) {
+                    selected = letterBank2[i];
 
                     if (letter == selected) {
                         found = true;
-                        letterBank[i] = 0;
+                        letterBank2[i] = 0;
                     }
                 }
 
@@ -235,70 +227,185 @@ void Graph::findCombos()
             if (bigFound)
             {
                 selectedWords.push_back(target);
-                selectedScores.push_back(wordMap[target]);
-
+               // selectedScores.push_back(wordMap[target]);
             }
 
         }
     }
-    sort(selectedScores.begin(), selectedScores.end());
+   // sort(selectedScores.begin(), selectedScores.end());
 
-}
+}*/
 
 void Graph::printResults()
 {
 
-    //case that the user wants more results than their letters can make
-    if (selectedWords.size() < numResponses)
+    for (auto x : adj[wordMap[importantWord].first])
+        cout << "-> " << x;
+
+}
+
+//is str 1 in str2
+bool Graph::within(string str1, string str2)
+{
+    bool found = false;
+    bool bigFound = false;
+
+    if (str1.length() > str2.length())
     {
-        for (int i = 0; i < selectedWords.size(); i++)
+        return false;
+    }
+
+    //not sure if this helps i dont think it does
+    sort(str1.begin(), str1.end());
+    sort(str2.begin(), str2.end());
+
+    // Compare sorted strings
+    for (int i = 0; i < str1.length(); i++)
+    {
+        found = false;
+        for (int j = 0; j < str2.length(); j++)
         {
-            cout << "Sorry! There isn't " << numResponses << " possible combos. Here are the " << selectedWords.size() << " we have." << endl;
-            cout << selectedWords[i] << " with a score of ";
-            cout << wordMap[selectedWords[i]] << endl;
+            if (str1[i] == str2[j])
+            {
+                found = true;
+            }
+        }
+        if (!found)
+        {
+            return false;
         }
     }
 
-    else
-    {
-        int bestScore = selectedScores[numResponses];
-        int count = 0;
+    return true;
 
-        for (int i = 0; i < selectedWords.size(); i++)
+}
+
+
+void Graph::BFS(int s)
+{
+    bool cont = false;
+
+    bool *visited = new bool[V];
+    for(int i = 0; i < V; i++)
+        visited[i] = false;
+
+    list<int> queue;
+
+    visited[s] = true;
+    queue.push_back(s);
+
+    list<int>::iterator i;
+
+    while(!queue.empty())
+    {
+
+        s = queue.front();
+
+        string curr = getKey(s);
+
+        //is curr in input
+        if (within(curr, input) && !cont)
         {
-            if (wordMap[selectedWords[i]] >= bestScore && count < numResponses)
+            importantWord = curr;
+            cont = true;
+        }
+
+        queue.pop_front();
+
+        for (i = adj[s].begin(); i != adj[s].end(); ++i)
+        {
+            if (!visited[*i])
             {
-                cout << selectedWords[i] << " with a score of ";
-                cout << wordMap[selectedWords[i]] << endl;
-                count++;
+                visited[*i] = true;
+                queue.push_back(*i);
             }
         }
     }
+}
+
+//helper function of BFS
+string Graph::getKey(int i)
+{
+    vector<char> comparing;
+    bool foundd = false;
+    auto it = wordMap.begin();
+
+    while(it != wordMap.end() || foundd == false)
+    {
+        if (it->second.first == i)
+        {
+            return it->first;
+        }
+        it++;
+    }
+}
+
+void Graph::readWords()
+{
+    ifstream file;
+
+    string word;
+
+    //drag file into "cmake-build-debug" folder
+    //downloaded from keggle but then changed into a txt file with only the first column
+    //realized ^that keggle data set was flawed and found a new one
+    file.open("dictionary.txt");
+
+    //an error associated with opening the file
+    if (!file) {
+        cout << "Unable to open file";
+
+        //terminate
+        exit(1);
+    }
+
+    //running count of entry number
+    count = 0;
+
+    //loads in each line
+    while (file >> word) {
+
+
+        //calls function to calculate the amount of points that word would attain in the game of scrabble
+        int points = calcPoints(word);
+
+        //map key- word, map value- first: count second: scrabble score
+        pair<int, int> myPair;
+        myPair.first = count;
+        myPair.second = points;
+
+        //stores in a map
+        wordMap.insert({word, myPair});
+
+        //adds the proper edges
+        Graph::addEdge(word, count);
+        count++;
+    }
+
+    file.close();
 
 }
 
 int main() {
 
     //calls function to read the txt file
-    Words wordObject;
-    int count = wordObject.readWords();
+    
+    Graph graph(6);
+    graph.readWords();
 
-
-    cout << count << endl;
 
     //intro message
-   /* cout << "Welcome to \"That’s So Scrabbulous\"" << endl;
+    cout << "Welcome to \"That’s So Scrabbulous\"" << endl;
 
     //first time menu
-    wordObject.menu();
+    graph.menu();
 
     //user can use program until they decide to quit
     bool continuePlaying = true;
     while (continuePlaying)
     {
-        wordObject.findCombos();
-
-        wordObject.printResults();
+        graph.BFS(0);
+        graph.printResults();
 
         string answer;
         cout << "Do you want to ask again? (yes or no)" << endl;
@@ -308,10 +415,10 @@ int main() {
             continuePlaying = false;
         else
         {
-            wordObject.menu();
+            graph.menu();
         }
 
-    }*/
+    }
 
     return 0;
 }
