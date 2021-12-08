@@ -6,25 +6,48 @@
 #include <vector>
 using namespace std;
 
-class Words
+class Graph
 {
-private:
-    map<string, int> wordMap;
+public:
+    map<string, pair<int,int>> wordMap;
     int numResponses;
     vector<char> letterBank;
     vector<string> selectedWords;
     vector<int> selectedScores;
 
-public:
-    void readWords();
+    //number of vertices is equal to amount of words in the data set
+    int numVert = 279496;
+
+    //adjaceny matrix implementation
+    string vertArr[279496][279496];
+
+    //functions
+    void add_edge(int newWord);
+    int readWords();
     void menu();
     int calcPoints(string word);
     void findCombos();
     void printResults();
 
+    //variables
+    int count;
 };
 
-int Words::calcPoints(string word)
+//adds edge between verties
+void Graph::add_edge(int newWord) {
+
+    int oldWord;
+    //if something is a subset of newWord
+    //if the word is within that word in some combo (aka same letters and <= size)
+    //then, [newWord][oldWord] = 1
+
+    //if newWord is a subset of something
+    //then, [oldWord][newWorld] = 1;
+    vertArr[newWord][oldWord] = 1;
+    vertArr[oldWord][newWord] = 1;
+}
+
+int Graph::calcPoints(string word)
 {
     int totalScore = 0;
     int numLength = word.length();
@@ -96,7 +119,7 @@ int Words::calcPoints(string word)
     return totalScore;
 }
 
-void Words::readWords()
+int Graph::readWords()
 {
     ifstream file;
 
@@ -104,33 +127,47 @@ void Words::readWords()
 
     //drag file into "cmake-build-debug" folder
     //downloaded from keggle but then changed into a txt file with only the first column
-    file.open("my_dictionary.txt");
+    file.open("scrabble_dict.txt");
 
     //an error associated with opening the file
     if (!file) {
-        cout << "Error: unable to open file";
+        cout << "Unable to open file";
 
         //terminate
         exit(1);
     }
 
+    count = 0;
+
     //loads in each line
     while (file >> word) {
 
-        //calls function to calculate the amount of points that word would attain in the game of scrabble
+        //map key- word, map value- first: count second: scrabble score
         int points = calcPoints(word);
+        pair<int, int> myPair;
+        myPair.first = count;
+        myPair.second = points;
+        
+        wordMap.insert({word, myPair});
+        
+        Graph::add_edge(count);
+        count++;
+        //calls function to calculate the amount of points that word would attain in the game of scrabble
+        /*int points = calcPoints(word);
 
         //inserts the word with its score into the map
         pair<string, int> myPair;
         myPair.first = word;
         myPair.second = points;
-        wordMap.insert(myPair);
+        wordMap.insert(myPair);*/
     }
 
     file.close();
+
+    return count;
 }
 
-void Words::menu()
+void Graph::menu()
 {
     letterBank.clear();
 
@@ -151,7 +188,7 @@ void Words::menu()
     }
 }
 
-void Words::findCombos()
+void Graph::findCombos()
 {
     int count = -1;
     vector<char> letterBankCopy = letterBank;
@@ -197,8 +234,8 @@ void Words::findCombos()
             //means all the letters were found and target word can be used in the game
             if (bigFound)
             {
-                    selectedWords.push_back(target);
-                    selectedScores.push_back(wordMap[target]);
+                selectedWords.push_back(target);
+                selectedScores.push_back(wordMap[target]);
 
             }
 
@@ -208,7 +245,7 @@ void Words::findCombos()
 
 }
 
-void Words::printResults()
+void Graph::printResults()
 {
 
     //case that the user wants more results than their letters can make
@@ -244,10 +281,13 @@ int main() {
 
     //calls function to read the txt file
     Words wordObject;
-    wordObject.readWords();
+    int count = wordObject.readWords();
+
+
+    cout << count << endl;
 
     //intro message
-    cout << "Welcome to \"That’s So Scrabbulous\"" << endl;
+   /* cout << "Welcome to \"That’s So Scrabbulous\"" << endl;
 
     //first time menu
     wordObject.menu();
@@ -271,7 +311,7 @@ int main() {
             wordObject.menu();
         }
 
-    }
+    }*/
 
     return 0;
 }
