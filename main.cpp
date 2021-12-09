@@ -95,8 +95,6 @@ void Graph::addEdge(string newWordStr, int newWordInt) {
         //all matches that appear thus far appear in selectedWords
         findCombos(newWordStr);
 
-        cout << newWordStr << endl;
-
         //it wont be a subset of anything that comes after
         for (int i = 0; i < selectedWords.size(); i++)
         {
@@ -184,14 +182,13 @@ void Graph::menu()
 {
     letterBank.clear();
 
-    cout << "How many letters do you want to include?" << endl;
-    cin >> numLetters;
-
     cout << "How many of the top responses do you want to hear?" << endl;
     cin >> numResponses;
 
     cout << "Please type your letters as a string" << endl;
     cin >> input;
+
+    numLetters = input.length();
 
 }
 
@@ -210,9 +207,30 @@ void Graph::findCombos(string target)
 
 void Graph::printResults()
 {
+    int numCon = wordMap[importantWord].first;
+    int count = numResponses;
+    int score = 0;
+    int specScore = 0;
 
-    for (auto x : adj[wordMap[importantWord].first])
-        cout << "-> " << x;
+
+    for (int i = 0; i < adj[numCon].size(); i++)
+    {
+        string keyy = getKey(adj[numCon][i]);
+        if (wordMap[keyy].second > score && count<6)
+        {
+            count++;
+            specScore = wordMap[keyy].second;
+        }
+    }
+
+    for (int i = 0; i < adj[numCon].size(); i++)
+    {
+        string keyy = getKey(adj[numCon][i]);
+        if (wordMap[keyy].second <= specScore)
+        {
+            cout << "Word: " << keyy << " Scrabble Score: " << wordMap[keyy].second;
+        }
+    }
 
 }
 
@@ -267,98 +285,116 @@ bool Graph::within(string str1, string str2)
 
 }
 
+void Graph::BFS(int src) {
+    // your code
+    bool found = false;
+    vector<bool> visited(adj.size());
 
-void Graph::BFS(int s)
-{
-    //bool cont = false;
+    vector<int> sorted;
+    queue<int> q;
 
-    //bool* visited = new bool[V];
-    //for (int i = 0; i < V; i++)
-    //    visited[i] = false;
+    visited[src] = true;
+    q.push(src);
 
-    //list<int> queue;
+    int u;
 
-    //visited[s] = true;
-    //queue.push_back(s);
+    while(!q.empty())
+    {
+       if(adj[q.front()].size() >= 1)
+       {
+           u = q.front();
 
-    //list<int>::iterator i;
+           if (getKey(u) != "0" && !found)
+           {
+               importantWord = getKey(u);
+               found = true;
+           }
 
-    //while (!queue.empty())
-    //{
+           q.pop();
 
-    //    s = queue.front();
+           for (int v: adj[u])
+           {
+               if (!visited[v])
+               {
+                   visited[v] = true;
+                   sorted.push_back(v);
+               }
+           }
+           sort(sorted.begin(), sorted.end());
+           for (int j = 0; j < sorted.size(); j++)
+           {
+               q.push(sorted[j]);
+           }
+           sorted.clear();
+       }
+       else
+       {
+           q.pop();
+           q.push(u++);
+       }
+    }
 
-    //    string curr = getKey(s);
-
-    //    //is curr in input
-    //    if (within(curr, input) && !cont)
-    //    {
-    //        importantWord = curr;
-    //        cont = true;
-    //    }
-
-    //    queue.pop_front();
-
-    //    for (i = adj[s].begin(); i != adj[s].end(); ++i)
-    //    {
-    //        if (!visited[*i])
-    //        {
-    //            visited[*i] = true;
-    //            queue.push_back(*i);
-    //        }
-    //    }
-    //}
 }
 
-void Graph::DFS(int s) {
-    //bool cont = false;
+void Graph::DFS(int src) {
+    // your code
+    bool found = false;
+    vector<bool> visited(adj.size());
 
-    //bool* visited = new bool[V];
-    //for (int i = 0; i < V; i++)
-    //    visited[i] = false;
+    vector<int> sorted;
+    stack<int> s;
 
-    //stack<int> wordS;
+    visited[src] = true;
+    s.push(src);
 
-    //visited[s] = true;
-    //wordS.push(s);
+    int u;
 
-    //list<int>::iterator i;
+    while(!s.empty())
+    {
+        if(adj[s.top()].size() >= 1)
+        {
+            u = s.top();
 
-    //while (!wordS.empty())
-    //{
+            if (getKey(u) != "0" && !found)
+            {
+                importantWord = getKey(u);
+                cout << importantWord << endl;
+                found = true;
+            }
 
-    //    s = wordS.top();
+            s.pop();
 
-    //    string curr = getKey(s);
+            for (int v: adj[u])
+            {
+                if (!visited[v])
+                {
+                    visited[v] = true;
+                    sorted.push_back(v);
+                }
+            }
+            sort(sorted.begin(), sorted.end());
+            for (int j = 0; j < sorted.size(); j++)
+            {
+                s.push(sorted[j]);
+            }
+            sorted.clear();
+        }
+        else
+        {
+            s.pop();
+            s.push(u++);
+        }
+    }
 
-    //    //is curr in input
-    //    if (within(curr, input) && !cont)
-    //    {
-    //        importantWord = curr;
-    //        cont = true;
-    //    }
-
-    //    wordS.pop();
-
-    //    for (i = adj[s].begin(); i != adj[s].end(); ++i)
-    //    {
-    //        if (!visited[*i])
-    //        {
-    //            visited[*i] = true;
-    //            wordS.push(*i);
-    //        }
-    //    }
-    //}
 }
 
 //helper function of BFS
 string Graph::getKey(int i)
 {
     vector<char> comparing;
-    bool foundd = false;
     auto it = wordMap.begin();
 
-    while (it != wordMap.end() || foundd == false)
+    while (it != wordMap.end())
     {
         if (it->second.first == i)
         {
@@ -366,6 +402,8 @@ string Graph::getKey(int i)
         }
         it++;
     }
+
+    return 0;
 }
 
 void Graph::readWords()
@@ -406,7 +444,7 @@ int main() {
 
     //calls function to read the txt file
     Graph graph;
-    
+
     //intro message
     cout << "Welcome to \"That’s So Scrabbulous\"" << endl;
 
@@ -419,7 +457,8 @@ int main() {
     bool continuePlaying = true;
     while (continuePlaying)
     {
-        graph.BFS(0);
+        graph.DFS(0);
+
         graph.printResults();
 
         string answer;
