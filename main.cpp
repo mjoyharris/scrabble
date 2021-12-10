@@ -1,3 +1,6 @@
+//Project 3: Scrabble
+//Group 47
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -8,9 +11,10 @@
 #include <algorithm>
 #include <stack>
 #include <queue>
-
 using namespace std;
 
+
+//the graph implementation
 class Graph
 {
 public:
@@ -21,64 +25,53 @@ public:
     vector<pair<int, int>> selectedScores;
 
     //number of vertices is equal to amount of words in the data set
+    //our data set is 279496 words
     int V;
-    //int numVert = 279496;
-    //vector<int> vertArr[279496];
 
-    //list<int>* adj;
     vector<vector<int>> adj;
 
+    //constructor
     Graph();
-    Graph(int V);
-
-    //adjaceny matrix implementation
-    //int vertArr[279496][279496];
 
     //functions
     void addEdge(string newWordStr, int newWordInt);
     void menu();
     void findCombos(string newWordStr);
     void printResults();
-    void BFS(int s);
-    void DFS(int s);
     string getKey(int i);
     bool within(string str1, string str2);
+    int calcPoints(string word);
+    void readWords();
+
+    //the two algorithms
+    void BFS(int s);
+    void DFS(int s);
 
     //variables
 
+    //user entries
     string input;
     string importantWord;
-    int calcPoints(string word);
     int count;
     int numLetters;
-    void readWords();
 };
 
+//constructor
 Graph::Graph()
 {
     numResponses = 0;
     count = 0;
+    //number from downloaded data set
     this->V = 279496;
     adj.resize(V);
-    //adj = new vector<int>[V];
-}
-
-Graph::Graph(int V)
-{
-    numResponses = 0;
-    count = 0;
-    this->V = V;
-    adj.resize(V);
-    //adj = new vector<int>[V];
 }
 
 //adds edge between vertices
 void Graph::addEdge(string newWordStr, int newWordInt) {
 
-    //if something is a subset of newWord
-    //if the word is within that word in some combo (aka same letters and <= size)
-    //then, [newWord][oldWord] = 1
+    //a vertex's vector will contain all the words that it itself can create
 
+    //only proceeds if word is a viable candidate (example: longer than number of letters user imputs)
     if ((newWordStr.length() <= input.length()) && (within(newWordStr,input)))
     {
         //calls function to calculate the amount of points that word would attain in the game of scrabble
@@ -95,17 +88,15 @@ void Graph::addEdge(string newWordStr, int newWordInt) {
         //all matches that appear thus far appear in selectedWords
         findCombos(newWordStr);
 
-        //it wont be a subset of anything that comes after
+        //puts in vertex vector
         for (int i = 0; i < selectedWords.size(); i++)
         {
             adj[wordMap[selectedWords[i]].first].push_back(newWordInt);
-            //adj[wordMap[selectedWords[i]].first]
-            //vertArr[wordMap[selectedWords[i]].first].push_back(newWordInt);
         }
     }
-
 }
 
+//converts the word into a scrabble score
 int Graph::calcPoints(string word)
 {
     int totalScore = 0;
@@ -178,6 +169,7 @@ int Graph::calcPoints(string word)
     return totalScore;
 }
 
+//asks the user for their input
 void Graph::menu()
 {
     letterBank.clear();
@@ -189,13 +181,15 @@ void Graph::menu()
     cin >> input;
 
     numLetters = input.length();
-
 }
 
+//this finds what words are within another word
 void Graph::findCombos(string target)
 {
+    //empties vector from previous iterations
     selectedWords.clear();
 
+    //loops through map to find them
     for (auto it = wordMap.begin(); it != wordMap.end(); it++)
     {
         if (within(target, it->first))
@@ -205,52 +199,52 @@ void Graph::findCombos(string target)
     }
 }
 
+//prints the possible anagrams with their respective scores
 void Graph::printResults()
 {
     int numCon = wordMap[importantWord].first;
     int count = numResponses;
-    int score = 0;
+    int score = 999;
     int specScore = 0;
 
+    vector<int> scores;
 
+    //find the n top scores out of the vector
     for (int i = 0; i < adj[numCon].size(); i++)
     {
         string keyy = getKey(adj[numCon][i]);
-        if (wordMap[keyy].second > score && count<6)
-        {
-            count++;
-            specScore = wordMap[keyy].second;
-        }
+        scores.push_back(wordMap[keyy].second);
     }
 
-    for (int i = 0; i < adj[numCon].size(); i++)
+    //sorts the vector in order to find the highest
+    sort(scores.begin(), scores.end());
+
+    //prints out n highest
+    for (int j = 0; j < numResponses; j++)
     {
-        string keyy = getKey(adj[numCon][i]);
-        if (wordMap[keyy].second <= specScore)
-        {
-            cout << "Word: " << keyy << " Scrabble Score: " << wordMap[keyy].second;
-        }
+        string keyy = getKey(adj[numCon][j]);
+        cout << "Word: " << keyy << " Scrabble Score: " << wordMap[keyy].second << endl;
     }
 
 }
 
-//second is input
+//helper function for findCombos that sees if one string is in another
 bool Graph::within(string str1, string str2)
 {
     bool found = false;
     bool bigFound = false;
 
-
+    //cant be within if longer
     if (str1.length() > str2.length())
     {
         return false;
     }
 
+    //for the purposes of our code design, we dont want it to return itself
     if (str1 == str2) {
         return false;
     }
 
-    //not sure if this helps i dont think it does
     sort(str1.begin(), str1.end());
     sort(str2.begin(), str2.end());
 
@@ -263,7 +257,7 @@ bool Graph::within(string str1, string str2)
         }
     }
 
-    // Compare sorted strings
+    // compares sorted strings
     for (int i = 0; i < str1.length(); i++)
     {
         found = false;
@@ -272,6 +266,7 @@ bool Graph::within(string str1, string str2)
             if (toupper(str1[i]) == toupper(str2[j]))
             {
                 found = true;
+                //this is important for repeated letters
                 str2[j] = -1;
             }
         }
@@ -280,13 +275,13 @@ bool Graph::within(string str1, string str2)
             return false;
         }
     }
-
     return true;
-
 }
 
+//breadth first search algorithm
 void Graph::BFS(int src) {
-    // your code
+
+    //code inspo comes from powerpoint slides
     bool found = false;
     vector<bool> visited(adj.size());
 
@@ -298,12 +293,14 @@ void Graph::BFS(int src) {
 
     int u;
 
+    //BFS uses a queue
     while(!q.empty())
     {
        if(adj[q.front()].size() >= 1)
        {
            u = q.front();
 
+           //this "important word" is the largest word that can be created by the user's input
            if (getKey(u) != "0" && !found)
            {
                importantWord = getKey(u);
@@ -336,6 +333,7 @@ void Graph::BFS(int src) {
 
 }
 
+//depth first search
 void Graph::DFS(int src) {
     // your code
     bool found = false;
@@ -358,7 +356,6 @@ void Graph::DFS(int src) {
             if (getKey(u) != "0" && !found)
             {
                 importantWord = getKey(u);
-                cout << importantWord << endl;
                 found = true;
             }
 
@@ -388,7 +385,7 @@ void Graph::DFS(int src) {
 
 }
 
-//helper function of BFS
+//reverse map function
 string Graph::getKey(int i)
 {
     vector<char> comparing;
@@ -437,7 +434,6 @@ void Graph::readWords()
     }
 
     file.close();
-
 }
 
 int main() {
@@ -448,31 +444,28 @@ int main() {
     //intro message
     cout << "Welcome to \"That’s So Scrabbulous\"" << endl;
 
+    string answer;
+    cout << "For project purposes, should we use DFS or BFS?" << endl;
+    cin >> answer;
+
     //first time menu
     graph.menu();
 
+    //loads words in
     graph.readWords();
 
-    //user can use program until they decide to quit
-    bool continuePlaying = true;
-    while (continuePlaying)
+    if (answer == "DFS")
     {
         graph.DFS(0);
-
-        graph.printResults();
-
-        string answer;
-        cout << "Do you want to ask again? (yes or no)" << endl;
-        cin >> answer;
-
-        if (answer == "no")
-            continuePlaying = false;
-        else
-        {
-            graph.menu();
-        }
-
     }
+    else
+    {
+        graph.BFS(0);
+    }
+
+    //shows the anagrams
+    graph.printResults();
+    
 
     return 0;
 }
