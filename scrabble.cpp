@@ -454,35 +454,18 @@ int main() {
     //loads words in
     graph.readWords();
 
-    //user can use program until they decide to quit
-    bool continuePlaying = true;
-    while (continuePlaying)
+    if (answer == "DFS")
     {
-        if (answer == "DFS")
-        {
-            graph.DFS(0);
-        }
-        else
-        {
-            graph.BFS(0);
-        }
-
-        //shows the anagrams
-        graph.printResults();
-
-        string answer;
-        cout << "Do you want to ask again? (yes or no)" << endl;
-        cin >> answer;
-
-        if (answer == "no")
-            continuePlaying = false;
-
-        else
-        {
-            graph.menu();
-        }
-
+        graph.DFS(0);
     }
+    else
+    {
+        graph.BFS(0);
+    }
+
+    //shows the anagrams
+    graph.printResults();
+    
 
     return 0;
 }
